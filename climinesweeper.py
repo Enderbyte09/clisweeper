@@ -75,6 +75,7 @@ def rechighlight(x,y,MINE_ARRAY,SHOW_ARRAY):
 def game(stdscr,GAME_X_SIZE,GAME_Y_SIZE,MINES,title="Minesweeper"):
     cursesplus.utils.hidecursor()
     stdscr.nodelay(1)
+    redraw = True
     MINE_ARRAY = gen_2d_array(GAME_X_SIZE,GAME_Y_SIZE,False)
     GAME_ARRAY = gen_2d_array(GAME_X_SIZE,GAME_Y_SIZE,0)
     SHOW_ARRAY = gen_2d_array(GAME_X_SIZE,GAME_Y_SIZE,False)
@@ -106,28 +107,32 @@ def game(stdscr,GAME_X_SIZE,GAME_Y_SIZE,MINES,title="Minesweeper"):
     curs_x = 1
     curs_y = 1
     winable = True
+    stdscr.clear()
     while True:
-        stdscr.clear()
-        rectangle(stdscr,0,0,GAME_Y_SIZE+1,GAME_X_SIZE+1)
-        stdscr.addstr(GAME_Y_SIZE+2,0,f"Mines: {MINES}")
-        stdscr.addstr(GAME_Y_SIZE+3,0,f"Flags: {cl_ls(collapse_2d_array(FLAG_ARRAY))}")
-        #stdscr.addstr(0,10,)
-        xl = 0
-        yl = 0
-        for col in GAME_ARRAY:
-            xl += 1
-            for obj in col:
-                yl += 1
-                if SHOW_ARRAY[xl-1][yl-1]:
-                    
-                    stdscr.addstr(yl,xl,str(obj),sc_wrapper(cursesplus.BLACK,cols_list[obj],yl==curs_y and xl==curs_x))
-                    if obj == 0 and yl==curs_y and xl==curs_x:
-                        stdscr.addstr(curs_y,curs_x,"█")
-                else:
-                    stdscr.addstr(yl,xl,"?",sc_wrapper(cursesplus.BLACK,cursesplus.WHITE,yl==curs_y and xl==curs_x))
-                if FLAG_ARRAY[xl-1][yl-1]:
-                    stdscr.addstr(yl,xl,"F",sc_wrapper(cursesplus.RED,cursesplus.WHITE,yl==curs_y and xl==curs_x))
+        #stdscr.clear()
+        if redraw:
+            
+            rectangle(stdscr,0,0,GAME_Y_SIZE+1,GAME_X_SIZE+1)
+            stdscr.addstr(GAME_Y_SIZE+2,0,f"Mines: {MINES}")
+            stdscr.addstr(GAME_Y_SIZE+3,0,f"Flags: {cl_ls(collapse_2d_array(FLAG_ARRAY))}")
+            #stdscr.addstr(0,10,)
+            xl = 0
             yl = 0
+            for col in GAME_ARRAY:
+                xl += 1
+                for obj in col:
+                    yl += 1
+                    if SHOW_ARRAY[xl-1][yl-1]:
+                        
+                        stdscr.addstr(yl,xl,str(obj),sc_wrapper(cursesplus.BLACK,cols_list[obj],yl==curs_y and xl==curs_x))
+                        if obj == 0 and yl==curs_y and xl==curs_x:
+                            stdscr.addstr(curs_y,curs_x,"█")
+                    else:
+                        stdscr.addstr(yl,xl,"?",sc_wrapper(cursesplus.BLACK,cursesplus.WHITE,yl==curs_y and xl==curs_x))
+                    if FLAG_ARRAY[xl-1][yl-1]:
+                        stdscr.addstr(yl,xl,"F",sc_wrapper(cursesplus.RED,cursesplus.WHITE,yl==curs_y and xl==curs_x))
+                yl = 0
+            redraw = False
         
         #stdscr.addstr(curs_y+1,curs_x+1,"█")
 
@@ -139,13 +144,18 @@ def game(stdscr,GAME_X_SIZE,GAME_Y_SIZE,MINES,title="Minesweeper"):
         k = stdscr.getch()
         if (k == curses.KEY_DOWN and curs_y < GAME_Y_SIZE):
             curs_y += 1
+            redraw = True
         elif k == curses.KEY_UP and curs_y > 1:
             curs_y -= 1
+            redraw = True
         elif k == curses.KEY_LEFT and curs_x > 1:
             curs_x -= 1
+            redraw = True
         elif k == curses.KEY_RIGHT and curs_x < GAME_X_SIZE:
             curs_x += 1
+            redraw = True
         elif k == 32 and not SHOW_ARRAY[curs_x-1][curs_y-1]:
+            redraw = True
             SHOW_ARRAY[curs_x-1][curs_y-1] = True
             if GAME_ARRAY[curs_x-1][curs_y-1] == 0:
                 rechighlight(curs_x-1,curs_y-1,MINE_ARRAY,SHOW_ARRAY)
@@ -153,10 +163,12 @@ def game(stdscr,GAME_X_SIZE,GAME_Y_SIZE,MINES,title="Minesweeper"):
                 cursesplus.messagebox.showinfo(stdscr,["You died!"])
                 break
         elif k == 102:
+            redraw = True
             FLAG_ARRAY[curs_x-1][curs_y-1] = not FLAG_ARRAY[curs_x-1][curs_y-1]
             SHOW_ARRAY[curs_x-1][curs_y-1] = not SHOW_ARRAY[curs_x-1][curs_y-1]
         
         elif k == 99:
+            redraw = True
             winable = False
             SHOW_ARRAY = gen_2d_array(GAME_X_SIZE,GAME_Y_SIZE,True)
             SHOW_ARRAY[0][0] = False#Cop-out to prevent win detector
