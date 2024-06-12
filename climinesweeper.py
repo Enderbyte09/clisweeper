@@ -73,6 +73,8 @@ def rechighlight(x,y,MINE_ARRAY,SHOW_ARRAY):
                     rechighlight(nx,ny,MINE_ARRAY,SHOW_ARRAY)
 
 def game(stdscr,GAME_X_SIZE,GAME_Y_SIZE,MINES,title="Minesweeper"):
+    stdscr.erase()
+    cursesplus.displaymsg(stdscr,["Generating Game","Please wait"],False,False)
     cursesplus.utils.hidecursor()
     stdscr.nodelay(1)
     redraw = True
