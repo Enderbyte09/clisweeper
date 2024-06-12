@@ -6,10 +6,11 @@ import os
 import random
 from time import sleep
 import datetime
+from eptranslate import *
 
-GAME_X_SIZE = 10
-GAME_Y_SIZE = 10
-MINES = 10
+#GAME_X_SIZE = 10
+#GAME_Y_SIZE = 10
+#MINES = 10
 
 def gen_2d_array(xs,yx,prefill) -> list[list]:
     final = []
@@ -26,12 +27,6 @@ def collapse_2d_array(ar) -> list:
         for b in a:
             final.append(b)
     return final
-
-
-MINE_ARRAY = gen_2d_array(GAME_X_SIZE,GAME_Y_SIZE,False)
-GAME_ARRAY = gen_2d_array(GAME_X_SIZE,GAME_Y_SIZE,0)
-SHOW_ARRAY = gen_2d_array(GAME_X_SIZE,GAME_Y_SIZE,False)
-FLAG_ARRAY = gen_2d_array(GAME_X_SIZE,GAME_Y_SIZE,False)
 
 def is_coord_in_array(ar,x,y) -> bool:
     f = True
@@ -57,29 +52,6 @@ def get_nearby(ar,x,y):
                 fn.append(False)
     return fn
 
-for i in range(MINES):
-    while True:
-        rx = random.randint(0,GAME_X_SIZE-1)
-        ry = random.randint(0,GAME_Y_SIZE-1)
-        if MINE_ARRAY[rx][ry]:
-            continue
-        MINE_ARRAY[rx][ry] = True
-        break
-
-xl = 0
-yl = 0
-for col in MINE_ARRAY:
-    for obj in col:
-        
-        if MINE_ARRAY[xl][yl]:
-            GAME_ARRAY[xl][yl] = 9
-        else:
-            GAME_ARRAY[xl][yl] = len([g for g in get_nearby(MINE_ARRAY,xl,yl) if g])
-
-        yl += 1
-    xl += 1
-    yl = 0
-
 cols_list = [cursesplus.BLACK,cursesplus.BLUE,cursesplus.GREEN,cursesplus.YELLOW,cursesplus.RED,cursesplus.MAGENTA,cursesplus.constants.CYAN,cursesplus.WHITE,cursesplus.WHITE,cursesplus.WHITE]
 
 def sc_wrapper(bg,fg,invert=False):
@@ -91,19 +63,45 @@ def sc_wrapper(bg,fg,invert=False):
 def cl_ls(ar):
     return len([g for g in ar if g])
 
-def rechighlight(x,y):
-    global MINE_ARRAY
-    global SHOW_ARRAY
+def rechighlight(x,y,MINE_ARRAY,SHOW_ARRAY):
+
     for nx in range(x-1,x+2):
         for ny in range(y-1,y+2):
             if is_coord_in_array(SHOW_ARRAY,nx,ny) and not SHOW_ARRAY[nx][ny]:
                 SHOW_ARRAY[nx][ny] = True
                 if cl_ls(get_nearby(MINE_ARRAY,nx,ny)) == 0:
-                    rechighlight(nx,ny)
+                    rechighlight(nx,ny,MINE_ARRAY,SHOW_ARRAY)
 
-def game(stdscr):
+def game(stdscr,GAME_X_SIZE,GAME_Y_SIZE,MINES,title="Minesweeper"):
     cursesplus.utils.hidecursor()
     stdscr.nodelay(1)
+    MINE_ARRAY = gen_2d_array(GAME_X_SIZE,GAME_Y_SIZE,False)
+    GAME_ARRAY = gen_2d_array(GAME_X_SIZE,GAME_Y_SIZE,0)
+    SHOW_ARRAY = gen_2d_array(GAME_X_SIZE,GAME_Y_SIZE,False)
+    FLAG_ARRAY = gen_2d_array(GAME_X_SIZE,GAME_Y_SIZE,False)
+    for i in range(MINES):
+        while True:
+            rx = random.randint(0,GAME_X_SIZE-1)
+            ry = random.randint(0,GAME_Y_SIZE-1)
+            if MINE_ARRAY[rx][ry]:
+                continue
+            MINE_ARRAY[rx][ry] = True
+            break
+
+    xl = 0
+    yl = 0
+    for col in MINE_ARRAY:
+        for obj in col:
+            
+            if MINE_ARRAY[xl][yl]:
+                GAME_ARRAY[xl][yl] = 9
+            else:
+                GAME_ARRAY[xl][yl] = len([g for g in get_nearby(MINE_ARRAY,xl,yl) if g])
+
+            yl += 1
+        xl += 1
+        yl = 0
+
     starttime = datetime.datetime.now()
     curs_x = 1
     curs_y = 1
@@ -134,21 +132,22 @@ def game(stdscr):
 
         #stdscr.addstr(0,0,f"X: {curs_x}, Y: {curs_y}")
         dt = (datetime.datetime.now() - starttime).total_seconds()
-        stdscr.addstr(0,0,f"{str(dt // 3600).zfill(1)}:{str(round(dt % 3600 // 60)).zfill(2)}:{str(round(dt % 60,1)).zfill(4)}")
+        stdscr.addstr(GAME_Y_SIZE+1,0,f"{str(round(dt // 3600 // 1)).zfill(1)}:{str(round(dt % 3600 // 60 // 1)).zfill(2)}:{str(round(dt % 60,1)).zfill(4)}")
+        stdscr.addstr(0,0,title)
         stdscr.refresh()
         k = stdscr.getch()
-        if (k == curses.KEY_DOWN):
+        if (k == curses.KEY_DOWN and curs_y < GAME_Y_SIZE):
             curs_y += 1
-        elif k == curses.KEY_UP:
+        elif k == curses.KEY_UP and curs_y > 1:
             curs_y -= 1
-        elif k == curses.KEY_LEFT:
+        elif k == curses.KEY_LEFT and curs_x > 1:
             curs_x -= 1
-        elif k == curses.KEY_RIGHT:
+        elif k == curses.KEY_RIGHT and curs_x < GAME_X_SIZE:
             curs_x += 1
         elif k == 32 and not SHOW_ARRAY[curs_x-1][curs_y-1]:
             SHOW_ARRAY[curs_x-1][curs_y-1] = True
             if GAME_ARRAY[curs_x-1][curs_y-1] == 0:
-                rechighlight(curs_x-1,curs_y-1)
+                rechighlight(curs_x-1,curs_y-1,MINE_ARRAY,SHOW_ARRAY)
             if GAME_ARRAY[curs_x-1][curs_y-1] == 9:
                 cursesplus.messagebox.showinfo(stdscr,["You died!"])
                 break
@@ -163,4 +162,29 @@ def game(stdscr):
     cursesplus.utils.showcursor()
     stdscr.nodelay(0) 
 
-curses.wrapper(game)
+difficulties = {
+    "Easy" : {
+        "x" : 10,
+        "y" : 10,
+        "m" : 10
+    }
+}
+
+def menu(stdscr):
+    while True:
+        wtd = cursesplus.coloured_option_menu(stdscr,["Play","Quit"],"CLISWEEPER",[["quit",cursesplus.RED]],"(c) 2024 Enderbyte Programs")
+        if wtd == 1:
+            break
+        elif wtd == 0:
+            diff = cursesplus.coloured_option_menu(stdscr,["Back"]+list(difficulties.keys()),"Choose a difficulty")
+            if diff == 0:
+                continue
+            else:
+                diff -= 1
+                dd = list(difficulties.values())[diff]
+                game(stdscr,dd["x"],dd["y"],dd["m"],"Minesweeper - "+list(difficulties.keys())[diff]+"")
+
+def main(stdscr):
+    menu(stdscr)
+
+curses.wrapper(main)

@@ -1,0 +1,8 @@
+[-info]
+name = "Command Line Minesweeper"
+default = "en"
+fallback = "en"
+
+[-info.available]
+en = "English"
+
