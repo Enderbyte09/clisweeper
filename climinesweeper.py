@@ -105,6 +105,7 @@ def game(stdscr,GAME_X_SIZE,GAME_Y_SIZE,MINES,title="Minesweeper"):
     starttime = datetime.datetime.now()
     curs_x = 1
     curs_y = 1
+    winable = True
     while True:
         stdscr.clear()
         rectangle(stdscr,0,0,GAME_Y_SIZE+1,GAME_X_SIZE+1)
@@ -154,11 +155,19 @@ def game(stdscr,GAME_X_SIZE,GAME_Y_SIZE,MINES,title="Minesweeper"):
         elif k == 102:
             FLAG_ARRAY[curs_x-1][curs_y-1] = not FLAG_ARRAY[curs_x-1][curs_y-1]
             SHOW_ARRAY[curs_x-1][curs_y-1] = not SHOW_ARRAY[curs_x-1][curs_y-1]
+        
+        elif k == 99:
+            winable = False
+            SHOW_ARRAY = gen_2d_array(GAME_X_SIZE,GAME_Y_SIZE,True)
+            SHOW_ARRAY[0][0] = False#Cop-out to prevent win detector
+        elif k == 113:
+            break
             
         if cl_ls(collapse_2d_array(SHOW_ARRAY)) == GAME_X_SIZE*GAME_Y_SIZE:
-            cursesplus.messagebox.showinfo(stdscr,["You win!"])
+            if winable:#Has the user cheated by pressing the emergency C key?
+                cursesplus.messagebox.showinfo(stdscr,["You win!"])
             break
-        sleep(0.01)
+        sleep(1/100)
     cursesplus.utils.showcursor()
     stdscr.nodelay(0) 
 
@@ -179,9 +188,9 @@ difficulties = {
         "m" : 40
     },
     "Insane" : {
-        "x" : 100,
-        "y" : 40,
-        "m" : 100
+        "x" : 110,
+        "y" : 26,
+        "m" : 400
     },
     "Super Easy" : {
         "x" : 5,
@@ -191,6 +200,7 @@ difficulties = {
 }
 
 def menu(stdscr):
+    sys.setrecursionlimit(10000)
     while True:
         wtd = cursesplus.coloured_option_menu(stdscr,["Play","Quit"],"CLISWEEPER",[["quit",cursesplus.RED]],"(c) 2024 Enderbyte Programs")
         if wtd == 1:
@@ -202,7 +212,10 @@ def menu(stdscr):
             else:
                 diff -= 1
                 dd = list(difficulties.values())[diff]
-                game(stdscr,dd["x"],dd["y"],dd["m"],"Minesweeper - "+list(difficulties.keys())[diff]+"")
+                try:
+                    game(stdscr,dd["x"],dd["y"],dd["m"],"Minesweeper - "+list(difficulties.keys())[diff]+"")
+                except Exception as e:
+                    cursesplus.messagebox.showerror(stdscr,["Error",str(e)])
 
 def main(stdscr):
     menu(stdscr)
