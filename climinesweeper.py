@@ -206,11 +206,20 @@ def menu(stdscr):
         if wtd == 1:
             break
         elif wtd == 0:
-            diff = cursesplus.coloured_option_menu(stdscr,["Back"]+list(difficulties.keys()),"Choose a difficulty")
+            diff = cursesplus.coloured_option_menu(stdscr,["Back","CUSTOM"]+list(difficulties.keys()),"Choose a difficulty")
             if diff == 0:
                 continue
+            elif diff == 1:
+                try:
+                    game(stdscr,
+                     cursesplus.numericinput(stdscr,"X size?"),
+                     cursesplus.numericinput(stdscr,"Y size?"),
+                     cursesplus.numericinput(stdscr,"Mine count?"),
+                     "Minesweeper - Custom")
+                except Exception as e:
+                    cursesplus.messagebox.showerror(stdscr,["Error",str(e)])
             else:
-                diff -= 1
+                diff -= 2
                 dd = list(difficulties.values())[diff]
                 try:
                     game(stdscr,dd["x"],dd["y"],dd["m"],"Minesweeper - "+list(difficulties.keys())[diff]+"")
